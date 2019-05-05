@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<link href="style.css" rel="stylesheet" type="text/css">
+<script src="jquery-3.4.1.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+<style>
+
+</style>
+
+<body>
+  <div class="col-md-12">
+
+    <div class="row">
+      <div id="GameBoardContainer" class="col-md-4 center-horizontal center-vertical margin-top-sm">
+        <table id="GameBoard" class="table table-condensed">
+    <!--   Row 1 -->
+    <tr>
+      <td id="A1" class="emptyCell 2"></td>
+      <td id="B1" class="emptyCell 1"></td>
+      <td id="C1" class="emptyCell 2"></td>
+    </tr>
+
+    <!--   Row 2 -->
+    <tr>
+      <td id="A2" class="emptyCell 1"></td>
+      <td id="B2" class="emptyCell 3"></td>
+      <td id="C2" class="emptyCell 1"></td>
+    </tr>
+
+    <!--   Row 3 -->
+    <tr>
+      <td id="A3" class="emptyCell 2"></td>
+      <td id="B3" class="emptyCell 1"></td>
+      <td id="C3" class="emptyCell 2"></td>
+    </tr>
+  </table>
+  <p id="txtResult"></p>
+  <button type="button" class="btn btn-sm btn-info" onclick="ResetGame()">Reset</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+<script>
+// ToDo
+//  1. Computer block
+//  2. Difficulty selector
+//  3. UI
+//    - Turn indicator
+//    - X/O
+//  4. Refactor into controllers
+//  5. Dynamic number of columns
+
+// Global variables
+var columns = ["A", "B", "C" ];
+
+$("#GameBoard").on("click", "td", function(e) {
+
+  if (ValidateMove(e.target.id)) {
+      AppendPieceToCell(true, e.target.id);
+  } else {
+    alert('invalid move');
+    return;
+  }
+
+  if (WinCheck(true)) {
+    DisplayResult('player wins');
+    return;
+  }
+
+  if (StaleMateCheck()) {
+    DisplayResult('stalemate');
+    return;
+  }
+
+  ComputerMove();
+});
+
+function DisplayResult(result) {
+  document.getElementById('txtResult').innerHTML = result;
+}
+
+function ResetGame() {
+
+  var tableCells = document.getElementsByTagName("td");
+
+  for(var i = 0; i < tableCells.length; i++){
+    tableCells[i].classList.remove('playerCell');
+    tableCells[i].classList.remove('computerCell');
+
+    tableCells[i].classList.add('emptyCell');
+  }
+
+  document.getElementById('txtResult').innerHTML = "";
+}
+
+function ValidateMove(cellId) {
+  return $("#" + cellId).hasClass("emptyCell")
+}
+
+function AppendPieceToCell(isPlayer, cellId) {
+
+  if (cellId != null) {
+    var tokenToPlace = GetCurrentPlayerToken(isPlayer);
+
+    document.getElementById(cellId).classList.remove('emptyCell');
+    document.getElementById(cellId).classList.add(tokenToPlace);
+  }
+}
+
+function GetCurrentPlayerToken(isPlayer) {
+  if (isPlayer === true) {
+    return "playerCell";
+  } else {
+    return "computerCell";
+  }
+}
+
+function WinCheck(isPlayer) {
+
+  var playerToken = GetCurrentPlayerToken(isPlayer);
+  var playerCells = document.getElementsByClassName(playerToken);
+  var playerCellsId = [];
+  var cellsToCheck = [];
+  var cellId;
+
+  for (i = 0; i < playerCells.length; i++) {
+    playerCellsId.push(playerCells[i].id);
+  }
+
+  if (playerCellsId.length >= 3) {
+
+    // Across(3)
+    for (i = 0; i < 3; i++) {
+      cellsToCheck= [];
+      var currentRow = i + 1;
+
+      for (x = 0; x < columns.length; x++) {
+        cellId = columns[x] + currentRow;
+        cellsToCheck.push(cellId);
+      }
+
+      if (arrayContainsArray(playerCellsId, cellsToCheck)) {
+        return true;
+      }
+    }
+
+    // Down
+    for (i = 0; i < 3; i++) {
+
+      cellsToCheck = [];
+      var currentColumn = i + 1;
+
+      for (x = 0; x < columns.length; x++) {
+        cellId = columns[i] + (x + 1);
+        cellsToCheck.push(cellId);
+      }
+
+      if (arrayContainsArray(playerCellsId, cellsToCheck)) {
+        return true;
+      }
+    }
+
+    // Diagonal
+    for (i = 0; i < 2; i++) {
+      cellsToCheck = [];
+      var currentColumn = i + 1;
+
+      if (i === 0) {
+        cellsToCheck = GetDiagonalCells(true);
+      } else {
+        cellsToCheck = GetDiagonalCells(false);
+      }
+
+      if (arrayContainsArray(playerCellsId, cellsToCheck)) {
+        return true;
+      }
+    }
+  }
+
+    return false;
+  }
+
+function arrayContainsArray(superset, subset) {
+  return subset.every(function (value) {
+    return (superset.indexOf(value) >= 0);
+  });
+}
+
+function GetAcrossCells(rowIndex) {
+  var rowCells = [];
+  var currentRow = rowIndex + 1;
+  var cellId;
+
+  for (i = 0; i < columns.length; i++) {
+    cellId = columns[i] + currentRow;
+    rowCells.push(cellId);
+  }
+
+  return rowCells;
+}
+
+function GetDiagonalCells(isLeftDiagonal) {
+  var diagonalCells = [];
+  var cellId;
+
+  if (isLeftDiagonal === true) {
+    for (x = 0; x < columns.length; x++) {
+      cellId = columns[x] + (x + 1);
+      diagonalCells.push(cellId);
+    }
+  } else {
+
+    for (x = 0; x < columns.length; x++) {
+      cellId = columns[columns.length - (x + 1)] + (x + 1);
+      diagonalCells.push(cellId);
+    }
+  }
+
+  return diagonalCells;
+}
+
+function StaleMateCheck() {
+  var availableCells = document.getElementsByClassName('emptyCell');
+
+  if (availableCells.length == 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function ComputerMove() {
+
+  // Best Move
+  AppendPieceToCell(false, ComputerBestMove())
+
+  // Random Move
+  //   var numberOfAvailableCells = availableCells.length;
+  //   var randomCellIndex = Math.floor(Math.random() * numberOfAvailableCells);
+
+  //   AppendPieceToCell(false, availableCells[randomCellIndex].id);
+
+  if (WinCheck(false)) {
+    DisplayResult('computer wins');
+    return;
+  }
+
+  if (StaleMateCheck()) {
+    DisplayResult('stalemate');
+    return;
+  }
+}
+
+function BlockPlayer(playerCells) {
+  // Get winning combinations and check if player has 2 of them, place computer piece in third cell
+  var cellsToCheck = [];
+  var cellsToBlock = [];
+  var playerCellIds = [];
+
+  for (var i = 0; i < playerCells.length; i++) {
+    playerCellIds.push(playerCells[i].id);
+  }
+
+  // Across
+  for (i = 0; i < 3; i++) {
+    cellsToCheck= [];
+    cellsToBlock = [];
+    var currentRow = i + 1;
+
+    for (x = 0; x < columns.length; x++) {
+      cellId = columns[x] + currentRow;
+      cellsToCheck.push(cellId);
+    }
+
+    cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
+
+    if (cellsToBlock.length == 1) {
+      if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
+        AppendPieceToCell(false, cellsToBlock[0]);
+        return;
+      }
+    }
+  }
+
+  // Down
+  for (i = 0; i < 3; i++) {
+    cellsToBlock = [];
+    cellsToCheck = [];
+    var currentColumn = i + 1;
+
+    for (x = 0; x < columns.length; x++) {
+      cellId = columns[i] + (x + 1);
+      cellsToCheck.push(cellId);
+    }
+
+    cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
+
+    if (cellsToBlock.length == 1) {
+      if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
+        AppendPieceToCell(false, cellsToBlock[0]);
+        return;
+      }
+    }
+  }
+
+  // Diagonal
+  for (i = 0; i < 2; i++) {
+    cellsToCheck = [];
+    cellsToBlock = [];
+    var currentColumn = i + 1;
+
+    if (i === 0) {
+      cellsToCheck = GetDiagonalCells(true);
+    } else {
+      cellsToCheck = GetDiagonalCells(false);
+    }
+
+    cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
+
+    if (cellsToBlock.length == 1) {
+      if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
+        AppendPieceToCell(false, cellsToBlock[0]);
+        return;
+      }
+    }
+  }
+
+  // No blocking move made, place token in best available cell
+ ComputerBestAvailableCell();
+}
+
+function ComputerBestMove() {
+
+  // Check for 2 in a row with a empty cell in 3rd position
+  var playerCells = document.getElementsByClassName('playerCell');
+
+  // If player has made 2 or more moves, try to prevent them from winning
+  if (playerCells.length > 1) {
+      BlockPlayer(playerCells);
+  } else {
+    ComputerBestAvailableCell();
+  }
+}
+
+function ComputerBestAvailableCell() {
+  var availableCells = document.getElementsByClassName('emptyCell');
+
+  for (var i = 3; i > 0; i--) {
+    for (var x = 0; x < availableCells.length; x++) {
+      if (availableCells[x].classList.contains(i)) {
+        AppendPieceToCell(false, availableCells[x].id);
+        return;
+      }
+    }
+  }
+}
+
+</script>

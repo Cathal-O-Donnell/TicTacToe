@@ -1,0 +1,32 @@
+
+.table {
+  table-layout:fixed;
+  width: 150px;
+}
+
+tr {
+  height: 50px;
+}
+
+td {
+  text-align: center;
+  border: 1px solid black;
+  width: 50px !important;
+}
+
+.playerCell {
+  background-color: LightGreen;
+}
+
+.computerCell {
+  background-color: OrangeRed;
+}
+
+.center-horizontal {
+  left: 50%;
+  transform: translateX(-50%)
+}
+
+.margin-top-sm {
+  margin-top: 20px;
+}
