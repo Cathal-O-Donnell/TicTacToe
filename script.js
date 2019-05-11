@@ -1,26 +1,29 @@
 // Global variables
 const columns = ["A", "B", "C"];
+var gameOver = 0;
 
 $("#GameBoard").on("click", "td", function(e) {
 
-  if (ValidateMove(e.target.id)) {
-      AppendPieceToCell(true, e.target.id);
-  } else {
-    alert('Invalid move');
-    return;
-  }
+  if (gameOver == 0) {
+    if (ValidateMove(e.target.id)) {
+        AppendPieceToCell(true, e.target.id);
+    } else {
+      alert('Invalid move');
+      return;
+    }
 
-  if (WinCheck(true)) {
-    DisplayResult('Player wins');
-    return;
-  }
+    if (WinCheck(true)) {
+      DisplayResult('Player wins');
+      return;
+    }
 
-  if (StaleMateCheck()) {
-    DisplayResult('Stalemate');
-    return;
-  }
+    if (StaleMateCheck()) {
+      DisplayResult('Stalemate');
+      return;
+    }
 
-  ComputerMove();
+    ComputerMove();
+  }
 });
 
 function DisplayResult(resultText) {
@@ -50,6 +53,7 @@ function ResetGame() {
   }
 
   document.getElementById('txtResult').innerHTML = "";
+  gameOver = 0;
 }
 
 function ValidateMove(cellId) {
@@ -95,6 +99,7 @@ function WinCheck(isPlayer) {
         }
 
         if (IsWinningCellCombination(playerCellsId, cellsToCheck)) {
+          gameOver = 1;
           return true;
         }
       }
@@ -110,6 +115,7 @@ function WinCheck(isPlayer) {
       }
 
       if (IsWinningCellCombination(playerCellsId, cellsToCheck)) {
+        gameOver = 1;
         return true;
       }
     }
@@ -171,6 +177,7 @@ function StaleMateCheck() {
   var emptyCells = document.getElementsByClassName('emptyCell');
 
   if (emptyCells.length == 0) {
+    gameOver = 1;
     return true;
   } else {
     return false;
