@@ -77,14 +77,12 @@ var uiController = (function() {
   };
 })();
 
-var gameController = (function(uiCtrl) {
+var gameController = (function() {
 
   var GameVariables = {
     columns: ['A','B','C'],
     gameOver: 0
   };
-
-  var DOM = uiCtrl.getDomStrings();
 
   var getRowCells = function(rowIndex) {
     var cellId,
@@ -145,28 +143,28 @@ var gameController = (function(uiCtrl) {
     return elemenetIdArr;
   };
 
-  var computerBestMove = function(playerCellsArr, computerCellsArr) {
+  var computerBestMove = function(playerCellsArr, computerCellsArr, emptyCellClass, computerCellClass) {
     var bestMove;
 
     // If player has made 2 or more moves, try to prevent them from winning by blocking them
     if (playerCellsArr.length > 1) {
-      bestMove = computerWinningMoveCheck(playerCellsArr, computerCellsArr);
+      bestMove = computerWinningMoveCheck(playerCellsArr, computerCellsArr, emptyCellClass);
 
       if (bestMove == null) {
-        bestMove = blockPlayer(playerCellsArr);
+        bestMove = blockPlayer(playerCellsArr, computerCellClass);
       }
 
       if (bestMove == null) {
-        bestMove = computerBestAvailableCell();
+        bestMove = computerBestAvailableCell(emptyCellClass);
       }
     } else {
-      bestMove = computerBestAvailableCell();
+      bestMove = computerBestAvailableCell(emptyCellClass);
     }
 
     return bestMove;
   }
 
-var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
+var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr, emptyCellClass) {
     var cellsToCheck = [],
     computerCellIdArr = getElementArrayIds(computerCellsArr);
     availableCellArr = [];
@@ -184,7 +182,7 @@ var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
         availableCellArr = $(cellsToCheck).not(computerCellIdArr).get();
 
         if (availableCellArr.length == 1) {
-        	if (document.getElementById(availableCellArr).classList.contains(DOM.emptyCell)) {
+        	if (document.getElementById(availableCellArr).classList.contains(emptyCellClass)) {
             return availableCellArr[0];
           }
         }
@@ -203,19 +201,19 @@ var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
       availableCellArr = $(cellsToCheck).not(computerCellIdArr).get();
 
       if (availableCellArr.length == 1) {
-      	if (document.getElementById(availableCellArr).classList.contains(DOM.emptyCell)) {
+      	if (document.getElementById(availableCellArr).classList.contains(emptyCellClass)) {
           return availableCellArr[0];
         }
       }
     }
   }
 
-  var computerBestAvailableCell = function() {
+  var computerBestAvailableCell = function(emptyCellClass) {
     var availableCellArr = [];
     var bestMove;
 
     for (var availableCellIndex = 3; availableCellIndex > 0; availableCellIndex--) {
-    	availableCellArr = document.getElementsByClassName(DOM.emptyCell + ' ' + availableCellIndex);
+    	availableCellArr = document.getElementsByClassName(emptyCellClass + ' ' + availableCellIndex);
 
     	if(availableCellArr.length > 0) {
         return availableCellArr[Math.floor(Math.random()*availableCellArr.length)].id;
@@ -223,7 +221,7 @@ var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
   	}
   }
 
-  var blockPlayer = function(playerCells) {
+  var blockPlayer = function(playerCells, computerCellClass) {
 
     // Get winning combinations and check if player has 2 of them, place computer piece in third cell
     var cellsToCheck = [],
@@ -243,7 +241,7 @@ var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
         cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
 
         if (cellsToBlock.length == 1) {
-          if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
+          if (document.getElementById(cellsToBlock[0]).classList.contains(computerCellClass) == false) {
             return cellsToBlock[0]
           }
         }
@@ -262,7 +260,7 @@ var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
       cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
 
       if (cellsToBlock.length == 1) {
-        if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
+        if (document.getElementById(cellsToBlock[0]).classList.contains(computerCellClass) == false) {
           return cellsToBlock[0];
         }
       }
@@ -327,15 +325,15 @@ var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
       }
     },
 
-    computerMove: function(playerCellsArr, computerCellsArr) {
-      return computerBestMove(playerCellsArr, computerCellsArr);
+    computerMove: function(playerCellsArr, computerCellsArr, emptyCellClass, computerCellClass) {
+      return computerBestMove(playerCellsArr, computerCellsArr, emptyCellClass, computerCellClass);
     },
 
     getGameVariables: function() {
       return GameVariables;
     }
   }
-})(uiController);
+})();
 
 var controller  = (function(gameCtrl, uiCtrl){
   var DOM = uiCtrl.getDomStrings();
@@ -369,7 +367,7 @@ var controller  = (function(gameCtrl, uiCtrl){
       var playerCellsArr = uiCtrl.getPopulatedCells(true);
       var computerCellsArr = uiCtrl.getPopulatedCells(false);
 
-      uiCtrl.appendPieceToCell(false, gameCtrl.computerMove(playerCellsArr, computerCellsArr));
+      uiCtrl.appendPieceToCell(false, gameCtrl.computerMove(playerCellsArr, computerCellsArr, DOM.emptyCell, DOM.computerCell));
 
       if (gameCtrl.winCheck(DOM.computerCell)) {
         uiCtrl.displayText('Computer wins');
