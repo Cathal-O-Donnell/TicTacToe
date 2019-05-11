@@ -1,106 +1,192 @@
-// Global variables
-const columns = ["A", "B", "C"];
-var gameOver = 0;
 
-$("#GameBoard").on("click", "td", function(e) {
+var uiController = (function() {
 
-  if (gameOver == 0) {
-    if (ValidateMove(e.target.id)) {
-        AppendPieceToCell(true, e.target.id);
+  var DOMstrings = {
+    GameBoard: 'GameBoard',
+    btnReset: 'btnReset',
+    txtResult: 'txtResult',
+    playerCell: 'playerCell',
+    computerCell: 'computerCell',
+    emptyCell: 'emptyCell'
+  };
+
+  var getCurrentPlayerToken = function(isPlayer) {
+    if (isPlayer) {
+      return DOMstrings.playerCell;
     } else {
-      alert('Invalid move');
-      return;
+      return DOMstrings.computerCell;
+    }
+  };
+
+  return {
+
+    appendPieceToCell: function(isPlayer, cellId) {
+
+      if (cellId != null) {
+        var playerToken = getCurrentPlayerToken(isPlayer);
+
+        document.getElementById(cellId).classList.remove(DOMstrings.emptyCell);
+        document.getElementById(cellId).classList.add(playerToken);
+      }
+    },
+
+    isEmptyCell: function(cellId) {
+      return $("#" + cellId).hasClass(DOMstrings.emptyCell);
+    },
+
+    displayText: function(textToDisplay) {
+
+      var txtResult = document.getElementById(DOMstrings.txtResult);
+
+      $(txtResult).removeClass();
+
+      if (textToDisplay == 'Player wins') {
+        txtResult.classList.add('text-success');
+      } else if (textToDisplay == 'Computer wins') {
+        txtResult.classList.add('text-danger');
+      } else {
+        txtResult.classList.add('text-warning');
+      }
+
+      txtResult.innerHTML = textToDisplay;
+    },
+
+    resetGameBoard: function() {
+      var tableCells = document.getElementsByTagName("td");
+
+      for(var i = 0; i < tableCells.length; i++){
+        tableCells[i].classList.remove(DOMstrings.playerCell);
+        tableCells[i].classList.remove(DOMstrings.computerCell);
+
+        tableCells[i].classList.add(DOMstrings.emptyCell);
+      }
+    },
+
+    getPopulatedCells: function(isPlayer) {
+
+      if (isPlayer) {
+        return document.getElementsByClassName(DOMstrings.playerCell);
+      } else {
+        return document.getElementsByClassName(DOMstrings.computerCell);
+      }
+    },
+
+    getDomStrings: function() {
+      return DOMstrings;
+    }
+  };
+})();
+
+var gameController = (function(uiCtrl) {
+
+  var GameVariables = {
+    columns: ['A','B','C'],
+    gameOver: 0
+  };
+
+  var DOM = uiCtrl.getDomStrings();
+
+  var getRowCells = function(rowIndex) {
+    var cellId,
+    rowCells = [];
+
+    for (i = 0; i < GameVariables.columns.length; i++) {
+      cellId = GameVariables.columns[i] + (rowIndex + 1);
+      rowCells.push(cellId);
     }
 
-    if (WinCheck(true)) {
-      DisplayResult('Player wins');
-      return;
+    return rowCells;
+  };
+
+  var getColumnCells = function(columnIndex) {
+    var cellId,
+    columnCells = [];
+
+    for (x = 0; x < GameVariables.columns.length; x++) {
+      cellId = GameVariables.columns[columnIndex] + (x + 1);
+      columnCells.push(cellId);
     }
 
-    if (StaleMateCheck()) {
-      DisplayResult('Stalemate');
-      return;
+    return columnCells;
+  };
+
+  var getDiagonalCells = function(isLeftDiagonal) {
+    var cellId,
+    diagonalCells = [];
+
+    if (isLeftDiagonal === true) {
+      for (x = 0; x < GameVariables.columns.length; x++) {
+        cellId = GameVariables.columns[x] + (x + 1);
+        diagonalCells.push(cellId);
+      }
+    } else {
+      for (x = 0; x < GameVariables.columns.length; x++) {
+        cellId = GameVariables.columns[GameVariables.columns.length - (x + 1)] + (x + 1);
+        diagonalCells.push(cellId);
+      }
     }
 
-    ComputerMove();
+    return diagonalCells;
+  };
+
+  var isWinningCellCombination = function(playerCells, cellsToCheck) {
+    return cellsToCheck.every(function (value) {
+      return (playerCells.indexOf(value) >= 0);
+    });
+  };
+
+  var getElementArrayIds = function(elemenetArr) {
+    var elemenetIdArr = [];
+
+    for (var i = 0; i < elemenetArr.length; i++) {
+      elemenetIdArr.push(elemenetArr[i].id);
+    }
+
+    return elemenetIdArr;
+  };
+
+  var computerBestMove = function(playerCellsArr, computerCellsArr) {
+    var bestMove;
+
+    // If player has made 2 or more moves, try to prevent them from winning by blocking them
+    if (playerCellsArr.length > 1) {
+      bestMove = computerWinningMoveCheck(playerCellsArr, computerCellsArr);
+
+      if (bestMove == null) {
+        bestMove = blockPlayer(playerCellsArr);
+      }
+
+      if (bestMove == null) {
+        bestMove = computerBestAvailableCell();
+      }
+    } else {
+      bestMove = computerBestAvailableCell();
+    }
+
+    return bestMove;
   }
-});
 
-function DisplayResult(resultText) {
-  var txtResult = document.getElementById('txtResult');
-
-  $(txtResult).removeClass();
-
-  if (resultText == 'Player wins') {
-    txtResult.classList.add('text-success');
-  } else if (resultText == 'Computer wins') {
-    txtResult.classList.add('text-danger');
-  } else {
-    txtResult.classList.add('text-warning');
-  }
-
-  txtResult.innerHTML = resultText;
-}
-
-function ResetGame() {
-  var tableCells = document.getElementsByTagName("td");
-
-  for(var i = 0; i < tableCells.length; i++){
-    tableCells[i].classList.remove('playerCell');
-    tableCells[i].classList.remove('computerCell');
-
-    tableCells[i].classList.add('emptyCell');
-  }
-
-  document.getElementById('txtResult').innerHTML = "";
-  gameOver = 0;
-}
-
-function ValidateMove(cellId) {
-  return $("#" + cellId).hasClass("emptyCell");
-}
-
-function AppendPieceToCell(isPlayer, cellId) {
-
-  if (cellId != null) {
-    var tokenToPlace = GetCurrentPlayerToken(isPlayer);
-
-    document.getElementById(cellId).classList.remove('emptyCell');
-    document.getElementById(cellId).classList.add(tokenToPlace);
-  }
-}
-
-function GetCurrentPlayerToken(isPlayer) {
-
-  if (isPlayer === true) {
-    return "playerCell";
-  } else {
-    return "computerCell";
-  }
-}
-
-function WinCheck(isPlayer) {
-  var playerToken = GetCurrentPlayerToken(isPlayer);
-  var playerCells = document.getElementsByClassName(playerToken);
-  var playerCellsId = GetElementArrayIds(playerCells);
-  var cellsToCheck = [];
-  var cellId;
-
-  if (playerCellsId.length >= columns.length) {
+var computerWinningMoveCheck = function(playerCellsArr, computerCellsArr) {
+    var cellsToCheck = [],
+    computerCellIdArr = getElementArrayIds(computerCellsArr);
+    availableCellArr = [];
 
     // Row and Column
     for (var i = 0; i < 2; i++) {
-      for (var x = 0; x < columns.length; x++) {
+      for (var x = 0; x < GameVariables.columns.length; x++) {
 
         if (i == 0) {
-          cellsToCheck = GetRowCells(x);
+          cellsToCheck = getRowCells(x);
         } else {
-          cellsToCheck = GetColumnCells(x);
+          cellsToCheck = getColumnCells(x);
         }
 
-        if (IsWinningCellCombination(playerCellsId, cellsToCheck)) {
-          gameOver = 1;
-          return true;
+        availableCellArr = $(cellsToCheck).not(computerCellIdArr).get();
+
+        if (availableCellArr.length == 1) {
+        	if (document.getElementById(availableCellArr).classList.contains(DOM.emptyCell)) {
+            return availableCellArr[0];
+          }
         }
       }
     }
@@ -109,228 +195,208 @@ function WinCheck(isPlayer) {
     for (diagonalIndex = 0; diagonalIndex < 2; diagonalIndex++) {
 
       if (diagonalIndex === 0) {
-        cellsToCheck = GetDiagonalCells(true);
+        cellsToCheck = getDiagonalCells(true);
       } else {
-        cellsToCheck = GetDiagonalCells(false);
+        cellsToCheck = getDiagonalCells(false);
       }
 
-      if (IsWinningCellCombination(playerCellsId, cellsToCheck)) {
-        gameOver = 1;
-        return true;
-      }
-    }
-  }
+      availableCellArr = $(cellsToCheck).not(computerCellIdArr).get();
 
-  return false;
-}
-
-function IsWinningCellCombination(playerCells, cellsToCheck) {
-  return cellsToCheck.every(function (value) {
-    return (playerCells.indexOf(value) >= 0);
-  });
-}
-
-function GetRowCells(rowIndex) {
-  var cellId,
-  rowCells = [];
-
-  for (i = 0; i < columns.length; i++) {
-    cellId = columns[i] + (rowIndex + 1);
-    rowCells.push(cellId);
-  }
-
-  return rowCells;
-}
-
-function GetColumnCells(columnIndex) {
-  var cellId,
-  columnCells = [];
-
-  for (x = 0; x < columns.length; x++) {
-    cellId = columns[columnIndex] + (x + 1);
-    columnCells.push(cellId);
-  }
-
-  return columnCells;
-}
-
-function GetDiagonalCells(isLeftDiagonal) {
-  var cellId,
-  diagonalCells = [];
-
-  if (isLeftDiagonal === true) {
-    for (x = 0; x < columns.length; x++) {
-      cellId = columns[x] + (x + 1);
-      diagonalCells.push(cellId);
-    }
-  } else {
-    for (x = 0; x < columns.length; x++) {
-      cellId = columns[columns.length - (x + 1)] + (x + 1);
-      diagonalCells.push(cellId);
-    }
-  }
-
-  return diagonalCells;
-}
-
-function StaleMateCheck() {
-  var emptyCells = document.getElementsByClassName('emptyCell');
-
-  if (emptyCells.length == 0) {
-    gameOver = 1;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-function ComputerMove() {
-
-  // Make computer move
-  AppendPieceToCell(false, ComputerBestMove());
-
-  if (WinCheck(false)) {
-    DisplayResult('Computer wins');
-    return;
-  }
-
-  if (StaleMateCheck()) {
-    DisplayResult('Stalemate');
-    return;
-  }
-}
-
-function ComputerBestMove() {
-  var playerCells = document.getElementsByClassName('playerCell');
-
-  // If player has made 2 or more moves, try to prevent them from winning by blocking them
-  if (playerCells.length > 1) {
-    ComputerWinningMoveCheck(playerCells);
-  } else {
-    ComputerBestAvailableCell();
-  }
-}
-
-function GetElementArrayIds(elemenetArr) {
-  var elemenetIdArr = [];
-
-  for (var i = 0; i < elemenetArr.length; i++) {
-    elemenetIdArr.push(elemenetArr[i].id);
-  }
-
-  return elemenetIdArr;
-}
-
-function ComputerWinningMoveCheck(playerCells) {
-  var computerCells = document.getElementsByClassName('computerCell');
-  var cellsToCheck = [],
-  computerCellIds = GetElementArrayIds(computerCells);
-  availableCells = [];
-
-  // Row and Column
-  for (var i = 0; i < 2; i++) {
-    for (var x = 0; x < columns.length; x++) {
-
-      if (i == 0) {
-        cellsToCheck = GetRowCells(x);
-      } else {
-        cellsToCheck = GetColumnCells(x);
-      }
-
-      availableCells = $(cellsToCheck).not(computerCellIds).get();
-
-      if (availableCells.length == 1) {
-      	if (document.getElementById(availableCells).classList.contains('emptyCell')) {
-          AppendPieceToCell(false, availableCells[0]);
-          return;
+      if (availableCellArr.length == 1) {
+      	if (document.getElementById(availableCellArr).classList.contains(DOM.emptyCell)) {
+          return availableCellArr[0];
         }
       }
     }
   }
 
-  // Diagonal
-  for (diagonalIndex = 0; diagonalIndex < 2; diagonalIndex++) {
+  var computerBestAvailableCell = function() {
+    var availableCellArr = [];
+    var bestMove;
 
-    if (diagonalIndex === 0) {
-      cellsToCheck = GetDiagonalCells(true);
-    } else {
-      cellsToCheck = GetDiagonalCells(false);
-    }
+    for (var availableCellIndex = 3; availableCellIndex > 0; availableCellIndex--) {
+    	availableCellArr = document.getElementsByClassName(DOM.emptyCell + ' ' + availableCellIndex);
 
-    availableCells = $(cellsToCheck).not(computerCellIds).get();
-
-    if (availableCells.length == 1) {
-    	if (document.getElementById(availableCells).classList.contains('emptyCell')) {
-        AppendPieceToCell(false, availableCells[0]);
-        return;
+    	if(availableCellArr.length > 0) {
+        return availableCellArr[Math.floor(Math.random()*availableCellArr.length)].id;
       }
-    }
+  	}
   }
 
-  // No winning moves for computer, see if any blocks can be made
-  BlockPlayer(playerCells);
-}
+  var blockPlayer = function(playerCells) {
 
-function BlockPlayer(playerCells) {
+    // Get winning combinations and check if player has 2 of them, place computer piece in third cell
+    var cellsToCheck = [],
+    cellsToBlock = [],
+    playerCellIds = getElementArrayIds(playerCells);
 
-  // Get winning combinations and check if player has 2 of them, place computer piece in third cell
-  var cellsToCheck = [],
-  cellsToBlock = [],
-  playerCellIds = GetElementArrayIds(playerCells);
+    // Row and Column
+    for (var i = 0; i < 2; i++) {
+      for (var x = 0; x < GameVariables.columns.length; x++) {
 
-  // Row and Column
-  for (var i = 0; i < 2; i++) {
-    for (var x = 0; x < columns.length; x++) {
+        if (i == 0) {
+          cellsToCheck = getRowCells(x);
+        } else {
+          cellsToCheck = getColumnCells(x);
+        }
 
-      if (i == 0) {
-        cellsToCheck = GetRowCells(x);
+        cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
+
+        if (cellsToBlock.length == 1) {
+          if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
+            return cellsToBlock[0]
+          }
+        }
+      }
+    }
+
+    // Diagonal
+    for (diagonalIndex = 0; diagonalIndex < 2; diagonalIndex++) {
+
+      if (diagonalIndex === 0) {
+        cellsToCheck = getDiagonalCells(true);
       } else {
-        cellsToCheck = GetColumnCells(x);
+        cellsToCheck = getDiagonalCells(false);
       }
 
       cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
 
       if (cellsToBlock.length == 1) {
         if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
-          AppendPieceToCell(false, cellsToBlock[0]);
-          return;
+          return cellsToBlock[0];
         }
       }
     }
   }
 
-  // Diagonal
-  for (diagonalIndex = 0; diagonalIndex < 2; diagonalIndex++) {
+  return {
 
-    if (diagonalIndex === 0) {
-      cellsToCheck = GetDiagonalCells(true);
-    } else {
-      cellsToCheck = GetDiagonalCells(false);
+    winCheck: function(playerToken) {
+
+      var playerCells = document.getElementsByClassName(playerToken);
+      var playerCellsId = getElementArrayIds(playerCells);
+      var cellsToCheck = [];
+      var cellId;
+
+      if (playerCellsId.length >= GameVariables.columns.length) {
+
+        // Row and Column
+        for (var i = 0; i < 2; i++) {
+          for (var x = 0; x < GameVariables.columns.length; x++) {
+
+            if (i == 0) {
+              cellsToCheck = getRowCells(x);
+            } else {
+              cellsToCheck = getColumnCells(x);
+            }
+
+            if (isWinningCellCombination(playerCellsId, cellsToCheck)) {
+              GameVariables.gameOver = 1;
+              return true;
+            }
+          }
+        }
+
+        // Diagonal
+        for (diagonalIndex = 0; diagonalIndex < 2; diagonalIndex++) {
+
+          if (diagonalIndex === 0) {
+            cellsToCheck = getDiagonalCells(true);
+          } else {
+            cellsToCheck = getDiagonalCells(false);
+          }
+
+          if (isWinningCellCombination(playerCellsId, cellsToCheck)) {
+            GameVariables.gameOver = 1;
+            return true;
+          }
+        }
+      }
+
+      return false;
+    },
+
+    stalemateCheck: function(emptyCellClass) {
+      var emptyCells = document.getElementsByClassName(emptyCellClass);
+
+      if (emptyCells.length == 0) {
+        GameVariables.gameOver = 1;
+        return true;
+      } else {
+        return false;
+      }
+    },
+
+    computerMove: function(playerCellsArr, computerCellsArr) {
+      return computerBestMove(playerCellsArr, computerCellsArr);
+    },
+
+    getGameVariables: function() {
+      return GameVariables;
     }
+  }
+})(uiController);
 
-    cellsToBlock = $(cellsToCheck).not(playerCellIds).get();
+var controller  = (function(gameCtrl, uiCtrl){
+  var DOM = uiCtrl.getDomStrings();
+  var GameVariables = gameCtrl.getGameVariables();
 
-    if (cellsToBlock.length == 1) {
-      if (document.getElementById(cellsToBlock[0]).classList.contains('computerCell') == false) {
-        AppendPieceToCell(false, cellsToBlock[0]);
+  var SetUpEventListeners = function() {
+    document.getElementById(DOM.GameBoard).addEventListener('click', ctrlPlayerMove);
+    document.getElementById(DOM.btnReset).addEventListener('click', ctrlResetGame);
+  };
+
+  var ctrlPlayerMove = function(e) {
+
+    if (GameVariables.gameOver == 0) {
+      if (uiCtrl.isEmptyCell(e.target.id)) {
+        uiCtrl.appendPieceToCell(true, e.target.id);
+      } else {
+        alert('Invalid move');
+        return;
+      }
+
+      if (gameCtrl.winCheck(DOM.playerCell)) {
+        uiCtrl.displayText('Player wins');
+        return;
+      }
+
+      if (gameCtrl.stalemateCheck(DOM.emptyCell)) {
+        uiCtrl.displayText('Stalemate');
+        return;
+      }
+
+      var playerCellsArr = uiCtrl.getPopulatedCells(true);
+      var computerCellsArr = uiCtrl.getPopulatedCells(false);
+
+      uiCtrl.appendPieceToCell(false, gameCtrl.computerMove(playerCellsArr, computerCellsArr));
+
+      if (gameCtrl.winCheck(DOM.computerCell)) {
+        uiCtrl.displayText('Computer wins');
+        return;
+      }
+
+      if (gameCtrl.stalemateCheck(DOM.emptyCell)) {
+        uiCtrl.displayText('Stalemate');
         return;
       }
     }
-  }
+  };
 
-  // No blocking move made, place token in best available cell
- ComputerBestAvailableCell();
-}
+  var ctrlResetGame = function() {
+    GameVariables.gameOver = 0;
 
-function ComputerBestAvailableCell() {
-  var availableCells = [];
+    uiCtrl.resetGameBoard();
+    uiCtrl.displayText("");
+  };
 
-  for (var i = 3; i > 0; i--) {
-  	availableCells = document.getElementsByClassName('emptyCell ' + i);
+    return {
+      init: function() {
+        console.log('Application has started');
 
-  	if(availableCells.length > 0) {
-      AppendPieceToCell(false, availableCells[Math.floor(Math.random()*availableCells.length)].id);
-      return;
+        SetUpEventListeners();
+      }
     }
-	}
-}
+})(gameController, uiController);
+
+controller.init();
