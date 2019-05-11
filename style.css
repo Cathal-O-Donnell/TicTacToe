@@ -1,25 +1,94 @@
+body {
+  font-family: 'Lato', sans-serif;
+  overflow: hidden;
+  color: #212529;
+}
 
 .table {
   table-layout:fixed;
-  width: 150px;
+  width: 300px;
 }
 
 tr {
-  height: 50px;
+  height: 100px;
+  border: none !important;
+}
+
+.table td {
+  border-top: none;
 }
 
 td {
   text-align: center;
-  border: 1px solid black;
   width: 50px !important;
 }
 
+#GameBoardContainer {
+  height: 100vh;
+  background-color: #f2f2f2;
+  margin: 0 auto;
+}
+
+#MainHeading {
+  text-align: center;
+}
+
+#GameBoard {
+  margin-top: 25px;
+  margin: 0 auto;
+}
+
+#A1 {
+  border-bottom: 2px solid #808080;
+}
+
+#B1 {
+  border-bottom: 2px solid #808080;
+  border-right: 2px solid #808080;
+  border-left: 2px solid #808080;
+}
+
+#C1 {
+  border-bottom: 2px solid #808080;
+}
+
+#A2 {
+  border-bottom: 2px solid #808080;
+}
+
+#B2 {
+  border-bottom: 2px solid #808080;
+  border-right: 2px solid #808080;
+  border-left: 2px solid #808080;
+}
+
+#C2 {
+  border-bottom: 2px solid #808080;
+}
+
+#B3 {
+  border-right: 2px solid #808080;
+  border-left: 2px solid #808080;
+}
+
+#txtResult {
+  height: 35px;
+}
+
+#btnReset span {
+  margin-left: 10px;
+}
+
+.text-center {
+  text-align: center;
+}
+
 .playerCell {
-  background-color: LightGreen;
+  background-color: #53BD9D;
 }
 
 .computerCell {
-  background-color: OrangeRed;
+  background-color: #E74C3C;
 }
 
 .center-horizontal {
@@ -28,5 +97,13 @@ td {
 }
 
 .margin-top-sm {
-  margin-top: 20px;
+  margin-top: 25px;
+}
+
+.margin-top-md {
+  margin-top: 50px;
+}
+
+.btn-group-lg>.btn, .btn-lg {
+  border-radius: none !important;
 }
